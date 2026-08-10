@@ -1,0 +1,51 @@
+// JCorp AI Readiness Assessment — data model
+// Deliberately stores NO personally identifying information.
+// Segmentation is limited to organization and cross-functional role.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Response {
+  id           String   @id @default(cuid())
+  organization String
+  functionRole String
+  createdAt    DateTime @default(now())
+  durationSec  Int?
+
+  personalScore       Float
+  organizationalScore Float
+  overallScore        Float
+  band                String
+
+  // Serialised category and sub-dimension breakdown, cached at submit time.
+  scoresJson String
+
+  // True when every answer carried the same value (straight-lining).
+  straightLined Boolean @default(false)
+
+  // Marks rows created by the demo seed script so they can be purged cleanly.
+  isDemo Boolean @default(false)
+
+  answers Answer[]
+
+  @@index([organization])
+  @@index([functionRole])
+  @@index([createdAt])
+}
+
+model Answer {
+  id         String   @id @default(cuid())
+  responseId String
+  itemId     String
+  value      Int
+  response   Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
+
+  @@unique([responseId, itemId])
+  @@index([itemId])
+}

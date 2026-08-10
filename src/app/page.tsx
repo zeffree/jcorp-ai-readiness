@@ -1,69 +1,181 @@
-import Image from "next/image";
+import Link from "next/link";
+import {
+  ALL_ITEMS,
+  ALL_SUB_DIMENSIONS,
+  FRAMEWORK,
+  READINESS_BANDS,
+} from "@/config/framework";
+import { FUNCTION_ROLES, ORGANIZATIONS } from "@/config/segments";
+import { AppHeader } from "@/components/AppHeader";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <>
+      <AppHeader
+        right={
+          <Link
+            href="/admin"
+            className="rounded-md border border-brand-200 px-3 py-1.5 text-xs font-medium text-brand-700 transition hover:bg-brand-50"
+          >
+            Management dashboard
+          </Link>
+        }
+      />
+
+      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
+        <section className="rounded-xl border border-brand-100 bg-white p-8 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent-600">
+            JCorp Group
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          <h1 className="mt-2 text-3xl font-semibold text-brand-900 sm:text-4xl">
+            Where do we really stand on AI readiness?
+          </h1>
+          <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-600">
+            This assessment benchmarks leaders across the JCorp group on two
+            things: whether people feel supported, able and willing to work
+            differently with AI, and whether their organisation is ready to make
+            the shifts an agentic future demands. It follows the structure of
+            the McKinsey AI Individual &amp; Organizational Assessment.
+          </p>
+
+          <dl className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {[
+              { label: "Statements", value: ALL_ITEMS.length },
+              { label: "Sub-dimensions", value: ALL_SUB_DIMENSIONS.length },
+              { label: "Companies", value: ORGANIZATIONS.length },
+              { label: "Minutes", value: "~12" },
+            ].map((stat) => (
+              <div key={stat.label} className="rounded-lg bg-brand-50 px-4 py-3">
+                <dt className="text-xs font-medium uppercase tracking-wide text-brand-600">
+                  {stat.label}
+                </dt>
+                <dd className="mt-1 text-2xl font-semibold text-brand-900">
+                  {stat.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <Link
+              href="/assess"
+              className="rounded-md bg-brand-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-800"
+            >
+              Start the assessment
+            </Link>
+            <span className="text-sm text-muted">
+              You will see your own results as soon as you submit.
+            </span>
+          </div>
+        </section>
+
+        <section className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-6">
+          <h2 className="text-sm font-semibold text-amber-900">
+            Your responses are anonymous
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-amber-900/80">
+            No name, email address or IP address is recorded. The only things
+            stored alongside your answers are your organisation and your
+            cross-functional role, and management only ever sees group averages.
+            Any group with fewer than three responses is hidden entirely so a
+            small team can never be traced back to one person.
+          </p>
+        </section>
+
+        <section className="mt-8 grid gap-6 lg:grid-cols-2">
+          {FRAMEWORK.map((pillar) => (
+            <div
+              key={pillar.id}
+              className="rounded-xl border border-brand-100 bg-white p-6 shadow-sm"
+            >
+              <h2 className="text-lg font-semibold text-brand-900">
+                {pillar.label}
+              </h2>
+              <p className="mt-1 text-sm italic text-muted">{pillar.question}</p>
+              <div className="mt-4 space-y-4">
+                {pillar.categories.map((category) => (
+                  <div key={category.id}>
+                    <h3 className="text-sm font-semibold text-brand-700">
+                      {category.label}
+                    </h3>
+                    <ul className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-sm text-slate-600">
+                      {category.subDimensions.map((sub, index) => (
+                        <li key={sub.id}>
+                          {sub.label}
+                          {index < category.subDimensions.length - 1 ? " ·" : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+
+        <section className="mt-8 rounded-xl border border-brand-100 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-brand-900">
+            How scores are read
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            Every answer is converted to a 0–100 index and rolled up through
+            sub-dimension, category and pillar.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-5">
+            {READINESS_BANDS.map((band) => (
+              <div
+                key={band.id}
+                className="rounded-lg border border-slate-200 p-3"
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: band.color }}
+                  />
+                  <span className="text-sm font-semibold text-brand-900">
+                    {band.label}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs font-medium text-muted">
+                  {Math.floor(band.min)}–{Math.floor(band.max)}
+                </p>
+                <p className="mt-2 text-xs leading-relaxed text-slate-600">
+                  {band.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-8 rounded-xl border border-brand-100 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-brand-900">
+            Who is being benchmarked
+          </h2>
+          <div className="mt-4 grid gap-6 sm:grid-cols-2">
+            <div>
+              <h3 className="text-sm font-semibold text-brand-700">
+                Organisations
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                {ORGANIZATIONS.join(" · ")}
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-brand-700">
+                Cross-functional roles
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                {FUNCTION_ROLES.join(" · ")}
+              </p>
+            </div>
+          </div>
+        </section>
       </main>
-    </div>
+
+      <footer className="no-print border-t border-brand-100 bg-white py-6 text-center text-xs text-muted">
+        JCorp AI Readiness Assessment · Anonymous · Structured on the McKinsey AI
+        Individual &amp; Organizational Assessment
+      </footer>
+    </>
   );
 }
