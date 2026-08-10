@@ -1,21 +1,20 @@
-import path from "node:path";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
 
-/**
- * Resolve the SQLite file to an absolute path so the client behaves the same
- * whether it is started by `next dev`, `next start` or a standalone script.
- */
-function resolveDatabaseUrl(): string {
-  const url = process.env.DATABASE_URL ?? "file:./prisma/dev.db";
-  if (!url.startsWith("file:")) return url;
-  const filePath = url.slice("file:".length);
-  if (path.isAbsolute(filePath)) return url;
-  return `file:${path.resolve(/* turbopackIgnore: true */ process.cwd(), filePath)}`;
+function databaseUrl(): string {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error(
+      "DATABASE_URL is not set. Copy .env.example to .env and point it at a PostgreSQL database.",
+    );
+  }
+  return url;
 }
 
 function createClient(): PrismaClient {
-  const adapter = new PrismaBetterSqlite3({ url: resolveDatabaseUrl() });
+  // A small pool keeps the app inside the connection limit of a Burstable
+  // PostgreSQL tier even when App Service runs several Node workers.
+  const adapter = new PrismaPg({ connectionString: databaseUrl(), max: 5 });
   return new PrismaClient({ adapter });
 }
 

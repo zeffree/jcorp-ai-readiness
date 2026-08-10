@@ -16,16 +16,18 @@ about 12 minutes.
 
 ---
 
-## Quick start
+## Quick start (local development)
 
-Requires Node.js 20 or later.
+Requires Node.js 20 or later and a PostgreSQL database. The simplest option is to point
+local development at the Azure database that is already running — see the live deployment
+section below for how to fetch the connection string.
 
 ```powershell
 cd ai-readiness
 npm install                 # also runs `prisma generate`
-Copy-Item .env.example .env # then edit the secrets, see below
-npm run db:migrate          # creates prisma/dev.db
-npm run seed                # optional: 260 synthetic responses so the dashboard has data
+Copy-Item .env.example .env # then fill in DATABASE_URL and the secrets
+npm run db:migrate          # applies migrations to the database in DATABASE_URL
+npm run seed                # optional: 520 synthetic responses so the dashboard has data
 npm run dev                 # http://localhost:3000
 ```
 
@@ -36,13 +38,16 @@ npm run build
 npm run start               # set $env:PORT to change the port
 ```
 
+> Connecting from a new machine or network needs a PostgreSQL firewall rule for that
+> public IP — see "Redeploying and operating" below.
+
 ### Environment variables
 
 Everything lives in `.env` (never committed). `.env.example` is the template.
 
 | Variable | Purpose |
 |---|---|
-| `DATABASE_URL` | Database connection. `file:./prisma/dev.db` for local SQLite. |
+| `DATABASE_URL` | PostgreSQL connection string, including `?sslmode=verify-full` on Azure. |
 | `ADMIN_PASSWORD` | Shared password for `/admin`. **Change this before anyone uses the app.** |
 | `SESSION_SECRET` | Signs the admin session cookie. Use a long random string; changing it signs everyone out. |
 | `NEXT_PUBLIC_MIN_SEGMENT_SIZE` | Minimum responses before a segment's scores are shown. Default `3`. |
@@ -137,9 +142,10 @@ screen never mixes pillars — so a bad edit fails fast.
 | `npm run lint` | ESLint |
 | `npm run db:migrate` | Apply Prisma migrations |
 | `npm run db:studio` | Browse the database in Prisma Studio |
-| `npm run seed` | Purge demo rows, then generate 260 synthetic responses (`npm run seed -- 500` for a different count) |
+| `npm run seed` | Purge demo rows, then generate 520 synthetic responses (`npm run seed -- 700` for a different count) |
 | `npm run seed:purge` | Delete demo rows only, leaving real responses untouched |
 | `npm run purge:test` | Delete non-demo rows — use after the smoke test or screenshot script |
+| `npm run package` | Build the Azure deployment zip from the standalone output |
 
 Two developer utilities are not wired into npm scripts:
 
@@ -165,24 +171,74 @@ ai-readiness/
 ├─ src/lib/prisma.ts               Prisma client singleton + SQLite adapter
 ├─ src/app/                        landing, assess, results, admin, API routes
 ├─ src/components/                 charts, heatmap, score dials, chip selects
-└─ scripts/                        seed, purge, smoke test, screenshots
+└─ scripts/                        seed, purge, package, smoke test, screenshots
 ```
 
 ---
 
-## Deploying beyond the laptop
+## Live deployment
 
-The SQLite file is local-only. For a real rollout:
+The app runs on Azure in the `rg-jcorp-ai-readiness` resource group, Southeast Asia region,
+under the Visual Studio Enterprise subscription.
 
-1. Change the `datasource` provider in `prisma/schema.prisma` to `postgresql` or `sqlserver`, point
-   `DATABASE_URL` at the managed database, and swap the adapter in `src/lib/prisma.ts`
-   (`@prisma/adapter-pg` or the equivalent). Then `npx prisma migrate deploy`.
-2. Containerise and host on Azure App Service or Container Apps.
-3. Move `ADMIN_PASSWORD` and `SESSION_SECRET` into Azure Key Vault — or, better, replace the shared
-   password with Entra ID sign-in restricted to the management group. The password gate is deliberately
-   simple and is the weakest part of the system.
-4. Serve over HTTPS; the session cookie is already `HttpOnly` and `SameSite=Lax`, and sets `Secure` in
-   production.
+| Resource | Name | Notes |
+|---|---|---|
+| Web app | `jcorp-ai-readiness-xcvzjh` | App Service Linux, Node 22, B1 plan, always-on, HTTPS only |
+| App Service plan | `asp-jcorp-airead` | B1 (~USD 13/month) |
+| Database | `psql-jcorp-airead-xcvzjh` | PostgreSQL Flexible Server 17, Burstable B1ms, 32 GB (~USD 15/month) |
+| Database name | `airreadiness` | |
+
+Live URL: **https://jcorp-ai-readiness-xcvzjh.azurewebsites.net**
+
+Secrets live in App Service application settings, not in the deployment artifact. To read the
+admin password or rotate it:
+
+```powershell
+# Read the current values
+az webapp config appsettings list -g rg-jcorp-ai-readiness -n jcorp-ai-readiness-xcvzjh `
+  --query "[?name=='ADMIN_PASSWORD'].value" -o tsv
+
+# Rotate it
+az webapp config appsettings set -g rg-jcorp-ai-readiness -n jcorp-ai-readiness-xcvzjh `
+  --settings "ADMIN_PASSWORD=<new password>"
+```
+
+### Redeploying and operating
+
+```powershell
+npm run build
+npm run package                                   # writes dist/app.zip
+az webapp deploy -g rg-jcorp-ai-readiness -n jcorp-ai-readiness-xcvzjh `
+  --src-path dist\app.zip --type zip
+```
+
+Schema changes go out with `npx prisma migrate deploy` run against the Azure `DATABASE_URL`
+before the new build is deployed.
+
+Connecting from a new machine needs a firewall rule for its public IP:
+
+```powershell
+az postgres flexible-server firewall-rule create -g rg-jcorp-ai-readiness `
+  -s psql-jcorp-airead-xcvzjh -n <rule-name> `
+  --start-ip-address <ip> --end-ip-address <ip>
+```
+
+Application logs:
+
+```powershell
+az webapp log tail -g rg-jcorp-ai-readiness -n jcorp-ai-readiness-xcvzjh
+```
+
+### Hardening still worth doing
+
+1. **Move secrets to Key Vault** and reference them from App Service, or replace the shared
+   password with Entra ID sign-in restricted to the management group. The password gate is
+   deliberately simple and is the weakest part of the system.
+2. **Restrict database networking.** Public access with IP allow-listing is fine for a pilot;
+   private endpoints or VNet integration are the production answer.
+3. **Add a custom domain** and turn on Application Insights for real monitoring.
+4. **Take backups seriously.** The flexible server keeps 7 days of automated backups by default;
+   raise that if the responses matter beyond the survey round.
 
 ---
 
@@ -193,5 +249,5 @@ The SQLite file is local-only. For a real rollout:
   phrasing to JCorp language and have the sponsor sign it off.
 - **Change `ADMIN_PASSWORD` and `SESSION_SECRET`.**
 - **Clear the demo data** with `npm run seed:purge` before real responses are collected, or the
-  benchmark will be meaningless.
+  benchmark will be meaningless. The live database currently holds 520 synthetic responses.
 - **Decide the minimum segment size.** The default of 3 is low; consider 5 for a group this size.
