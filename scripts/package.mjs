@@ -8,7 +8,16 @@
  * every secret comes from App Service application settings instead.
  */
 
-import { cp, mkdir, rm, access, writeFile, readFile, stat } from "node:fs/promises";
+import {
+  cp,
+  mkdir,
+  rm,
+  access,
+  writeFile,
+  readFile,
+  stat,
+  readdir,
+} from "node:fs/promises";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -25,6 +34,28 @@ async function exists(target) {
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Next bundles the sharp binaries for the build machine's platform. The target
+ * is Linux App Service, so the Windows and macOS ones can never load. The app
+ * uses no next/image optimisation, but these are removed regardless: shipping a
+ * .node binary for the wrong platform is only ever a source of confusion.
+ */
+async function stripForeignBinaries(root) {
+  const imgDir = path.join(root, "node_modules", "@img");
+  if (!(await exists(imgDir))) return;
+
+  const removed = [];
+  for (const entry of await readdir(imgDir)) {
+    if (/win32|darwin/i.test(entry)) {
+      await rm(path.join(imgDir, entry), { recursive: true, force: true });
+      removed.push(entry);
+    }
+  }
+  if (removed.length > 0) {
+    console.log(`Removed non-Linux binaries: ${removed.join(", ")}`);
   }
 }
 
@@ -47,6 +78,8 @@ async function main() {
 
   // Secrets must never travel inside the deployment artifact.
   await rm(path.join(standalone, ".env"), { force: true });
+
+  await stripForeignBinaries(standalone);
 
   // App Service Linux looks for a start script; point it at the standalone server.
   const pkgPath = path.join(standalone, "package.json");

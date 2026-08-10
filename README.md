@@ -227,7 +227,26 @@ Application logs:
 
 ```powershell
 az webapp log tail -g rg-jcorp-ai-readiness -n jcorp-ai-readiness-xcvzjh
+az webapp log startup show -g rg-jcorp-ai-readiness -n jcorp-ai-readiness-xcvzjh
 ```
+
+### If a deploy reports "site failed to start"
+
+App Service reports the *last* container error alongside the current state, so a single earlier
+crash can make an otherwise healthy deploy look failed. This bit the very first deployment: the
+startup command was set before any code had been uploaded, so that container exited with code 1,
+and its error was still attached to the status the CLI polled ten minutes later — even though the
+site had started successfully.
+
+Before believing a failure, check what the container actually did:
+
+```powershell
+az webapp log startup show -g rg-jcorp-ai-readiness -n jcorp-ai-readiness-xcvzjh
+```
+
+A healthy deploy ends with `State: Started` and an empty `LastError`, and
+`az webapp deploy` returns `"status": "RuntimeSuccessful"` with `numberOfInstancesFailed: 0`.
+A normal deploy takes roughly three minutes, including a 50–70 second startup probe.
 
 ### Hardening still worth doing
 
