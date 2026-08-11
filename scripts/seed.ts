@@ -314,14 +314,14 @@ async function report() {
     by: ["organization", "functionRole"],
     _count: { _all: true },
   });
-  const suppressed = thinCells.filter((cell) => cell._count._all < 3).length;
+  const thin = thinCells.filter((cell) => cell._count._all < 3).length;
 
   console.log(`Database now holds ${total} response(s) (${demo} demo).`);
   console.log(
     `Companies covered: ${byOrganization.length}/${ORGANIZATIONS.length}. ` +
       `Company x function cells populated: ${thinCells.length}/${
         ORGANIZATIONS.length * FUNCTION_ROLES.length
-      }, of which ${suppressed} sit below the suppression threshold.`,
+      }, of which ${thin} hold fewer than three responses.`,
   );
 }
 

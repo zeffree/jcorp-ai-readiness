@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { MIN_SEGMENT_SIZE } from "@/config/segments";
 import { isAdmin } from "@/lib/auth";
 import { buildDashboard } from "@/lib/dashboard";
 import { filtersFromSearchParams } from "@/lib/filters";
@@ -14,7 +13,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const filters = filtersFromSearchParams(url.searchParams);
   const responses = await fetchScoredResponses(filters);
-  const payload = buildDashboard(responses, MIN_SEGMENT_SIZE);
+  const payload = buildDashboard(responses);
   payload.totals.demo = await prisma.response.count({
     where: { isDemo: true },
   });

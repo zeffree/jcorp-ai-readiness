@@ -5,7 +5,7 @@ import { heatColor } from "@/components/Score";
 export interface HeatmapRow {
   label: string;
   n: number;
-  suppressed: boolean;
+  empty: boolean;
   values: Record<string, number>;
 }
 
@@ -18,11 +18,9 @@ export interface HeatmapColumn {
 export function Heatmap({
   rows,
   columns,
-  minSegmentSize,
 }: {
   rows: HeatmapRow[];
   columns: HeatmapColumn[];
-  minSegmentSize: number;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -63,12 +61,12 @@ export function Heatmap({
               <td className="border-t border-slate-100 px-2 py-1.5 text-center text-xs tabular-nums text-muted">
                 {row.n}
               </td>
-              {row.suppressed
+              {row.empty
                 ? columns.map((column) => (
                     <td
                       key={column.id}
                       className="border-t border-slate-100 px-1 py-1.5 text-center text-[10px] text-slate-400"
-                      title={`Hidden: fewer than ${minSegmentSize} responses`}
+                      title="No responses yet"
                     >
                       —
                     </td>

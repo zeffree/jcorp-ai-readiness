@@ -202,52 +202,53 @@ describe("straight-lining", () => {
 });
 
 describe("aggregate", () => {
-  const minSegmentSize = 3;
-
-  it("suppresses a segment below the minimum size", () => {
+  it("scores a segment of one, with no minimum size rule", () => {
     const responses = [toAggregateInput({ answers: answersOf(6) })];
-    const result = aggregate(responses, minSegmentSize);
+    const result = aggregate(responses);
     expect(result.n).toBe(1);
-    expect(result.suppressed).toBe(true);
-    expect(result.overall).toBe(0);
+    expect(result.empty).toBe(false);
+    expect(result.overall).toBe(100);
   });
 
-  it("averages a segment at or above the minimum size", () => {
+  it("averages a multi-response segment", () => {
     const responses = [
       toAggregateInput({ id: "a", answers: answersOf(6) }),
       toAggregateInput({ id: "b", answers: answersOf(1) }),
       toAggregateInput({ id: "c", answers: answersOf(6) }),
     ];
-    const result = aggregate(responses, minSegmentSize);
-    expect(result.suppressed).toBe(false);
+    const result = aggregate(responses);
+    expect(result.empty).toBe(false);
     expect(result.n).toBe(3);
     expect(result.overall).toBeCloseTo(66.7, 1);
   });
 
   it("returns an empty aggregate with no responses", () => {
-    const result = aggregate([], minSegmentSize);
+    const result = aggregate([]);
     expect(result.n).toBe(0);
-    expect(result.suppressed).toBe(true);
+    expect(result.empty).toBe(true);
   });
 
-  it("groups by organization and suppresses thin cells", () => {
+  it("groups by organization and scores every non-empty cell", () => {
     const responses = [
       toAggregateInput({ id: "a", organization: "KPJ", answers: answersOf(6) }),
       toAggregateInput({ id: "b", organization: "KPJ", answers: answersOf(6) }),
       toAggregateInput({ id: "c", organization: "KPJ", answers: answersOf(6) }),
       toAggregateInput({ id: "d", organization: "QSR", answers: answersOf(3) }),
     ];
-    const grouped = aggregateBy(
-      responses,
-      "organization",
-      ["KPJ", "QSR"],
-      minSegmentSize,
-    );
+    const grouped = aggregateBy(responses, "organization", [
+      "KPJ",
+      "QSR",
+      "JLG",
+    ]);
     const kpj = grouped.find((entry) => entry.label === "KPJ");
     const qsr = grouped.find((entry) => entry.label === "QSR");
+    const jlg = grouped.find((entry) => entry.label === "JLG");
     expect(kpj?.aggregate.overall).toBe(100);
-    expect(qsr?.aggregate.suppressed).toBe(true);
+    expect(qsr?.aggregate.empty).toBe(false);
     expect(qsr?.aggregate.n).toBe(1);
+    expect(qsr?.aggregate.overall).toBe(40);
+    expect(jlg?.aggregate.empty).toBe(true);
+    expect(jlg?.aggregate.n).toBe(0);
   });
 });
 
@@ -261,7 +262,7 @@ describe("rankSubDimensions", () => {
     const responses = [1, 2, 3].map((index) =>
       toAggregateInput({ id: `r${index}`, answers }),
     );
-    const ranked = rankSubDimensions(aggregate(responses, 3));
+    const ranked = rankSubDimensions(aggregate(responses));
     expect(ranked[0].id).toBe("governance");
     expect(ranked.at(-1)?.id).toBe("ai-usage");
   });

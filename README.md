@@ -14,6 +14,10 @@ Structured on the two pillars of the McKinsey *AI Individual & Organizational As
 Each statement is rated on a 6-point agreement scale with no neutral midpoint. A full sitting takes
 about 12 minutes.
 
+> **Want to run this on your own infrastructure?** See **[docs/SELF-HOSTING.md](docs/SELF-HOSTING.md)**
+> — a step-by-step guide to importing the project into your own GitHub organisation, pointing it at
+> your own database, and deploying it to your own Azure subscription (or Vercel, Docker, or on-prem).
+
 ---
 
 ## Quick start (local development)
@@ -50,7 +54,6 @@ Everything lives in `.env` (never committed). `.env.example` is the template.
 | `DATABASE_URL` | PostgreSQL connection string, including `?sslmode=verify-full` on Azure. |
 | `ADMIN_PASSWORD` | Shared password for `/admin`. **Change this before anyone uses the app.** |
 | `SESSION_SECRET` | Signs the admin session cookie. Use a long random string; changing it signs everyone out. |
-| `NEXT_PUBLIC_MIN_SEGMENT_SIZE` | Minimum responses before a segment's scores are shown. Default `3`. |
 
 ---
 
@@ -101,9 +104,13 @@ dashboard with a filter toggle.
 - No name, email, IP address or user agent is stored — only organization, cross-functional role,
   timestamps, duration and the answers.
 - The results URL uses a random id that is not linked to any identity.
-- Any segment with fewer than `NEXT_PUBLIC_MIN_SEGMENT_SIZE` responses is suppressed in the dashboard
-  and labelled "insufficient responses", so a cell like "Head of Company at Waqaf" cannot resolve to
-  one identifiable person.
+- Every segment holding at least one response is scored and shown. There is **no minimum-response
+  threshold** — a cell is blank only when nobody in it has responded yet.
+
+> **Read thin segments with care.** Because there is no minimum, a segment such as "Head of Company at
+> Waqaf" can show a score derived from a single person, and anyone who knows the org chart could infer
+> whose answers those are. The dashboard prints `n` beside every segment for exactly this reason. If
+> you need the old behaviour back, reinstate the threshold in `aggregate()` in `src/lib/scoring.ts`.
 
 The trade-off: there is no way to stop someone submitting twice, and no way to track who has responded.
 If response-rate tracking becomes necessary, the cleanest addition is single-use invite codes stored in
@@ -164,11 +171,11 @@ Both submit real (non-demo) responses, so follow them with `npm run purge:test`.
 ai-readiness/
 ├─ prisma/schema.prisma            Response + Answer models (no PII)
 ├─ src/config/framework.ts         pillars, categories, sub-dimensions, 44 items, bands, screens
-├─ src/config/segments.ts          organizations, roles, minimum segment size
-├─ src/lib/scoring.ts              normalisation, roll-ups, banding, aggregation, suppression
+├─ src/config/segments.ts          organizations and cross-functional roles
+├─ src/lib/scoring.ts              normalisation, roll-ups, banding, aggregation
 ├─ src/lib/dashboard.ts            builds the management dashboard payload
 ├─ src/lib/auth.ts                 signed admin session cookie
-├─ src/lib/prisma.ts               Prisma client singleton + SQLite adapter
+├─ src/lib/prisma.ts               Prisma client singleton + PostgreSQL adapter
 ├─ src/app/                        landing, assess, results, admin, API routes
 ├─ src/components/                 charts, heatmap, score dials, chip selects
 └─ scripts/                        seed, purge, package, smoke test, screenshots
@@ -269,4 +276,8 @@ A normal deploy takes roughly three minutes, including a 50–70 second startup 
 - **Change `ADMIN_PASSWORD` and `SESSION_SECRET`.**
 - **Clear the demo data** with `npm run seed:purge` before real responses are collected, or the
   benchmark will be meaningless. The live database currently holds 520 synthetic responses.
-- **Decide the minimum segment size.** The default of 3 is low; consider 5 for a group this size.
+- **Consider how thin segments will be read.** There is no minimum-response threshold: a segment of
+  one is scored and shown, with `n` beside it. Brief management that a single-respondent cell is one
+  person's opinion, not a benchmark — and note that such a cell may be attributable to an individual.
+- **Give the leaders a self-hosting path** if another group company wants their own instance:
+  [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md).

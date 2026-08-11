@@ -5,7 +5,6 @@ import {
   ALL_SUB_DIMENSIONS,
   bandFor,
 } from "@/config/framework";
-import { MIN_SEGMENT_SIZE } from "@/config/segments";
 import { AppHeader } from "@/components/AppHeader";
 import { CategoryRadar, ScoreBars } from "@/components/Charts";
 import { ScoreBadge, ScoreDial } from "@/components/Score";
@@ -24,8 +23,8 @@ export default async function ResultsPage({
   if (!response) notFound();
 
   const all = await fetchScoredResponses();
-  const group = aggregate(all, MIN_SEGMENT_SIZE);
-  const comparisonAvailable = !group.suppressed;
+  const group = aggregate(all);
+  const comparisonAvailable = !group.empty;
 
   const band = bandFor(response.overallScore);
 
@@ -150,8 +149,7 @@ export default async function ResultsPage({
               </span>
             ) : (
               <span className="text-xs text-muted">
-                Group comparison appears once {MIN_SEGMENT_SIZE} people have
-                responded
+                Group comparison appears once the first response is in
               </span>
             )}
           </div>

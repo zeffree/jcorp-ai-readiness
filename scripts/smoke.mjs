@@ -174,21 +174,17 @@ check(
 );
 
 check(
-  "suppressed segments never leak scores",
+  "every segment with responses is scored, none are hidden",
   dashboard.byOrganization
     .concat(dashboard.byFunction)
-    .filter((entry) => entry.aggregate.suppressed)
-    .every((entry) => entry.aggregate.overall === 0),
+    .filter((entry) => entry.aggregate.n > 0)
+    .every((entry) => !entry.aggregate.empty && entry.aggregate.overall > 0),
 );
 check(
-  "every segment below the minimum is suppressed",
+  "only segments with zero responses are flagged empty",
   dashboard.byOrganization
     .concat(dashboard.byFunction)
-    .every(
-      (entry) =>
-        entry.aggregate.n >= dashboard.minSegmentSize ||
-        entry.aggregate.suppressed,
-    ),
+    .every((entry) => entry.aggregate.empty === (entry.aggregate.n === 0)),
 );
 
 // 13. Filtering narrows the dataset

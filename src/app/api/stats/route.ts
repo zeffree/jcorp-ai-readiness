@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { MIN_SEGMENT_SIZE } from "@/config/segments";
 import { fetchScoredResponses } from "@/lib/responses";
 import { aggregate } from "@/lib/scoring";
 
@@ -10,16 +9,15 @@ import { aggregate } from "@/lib/scoring";
  */
 export async function GET() {
   const responses = await fetchScoredResponses();
-  const group = aggregate(responses, MIN_SEGMENT_SIZE);
+  const group = aggregate(responses);
 
   return NextResponse.json({
     n: group.n,
-    available: !group.suppressed,
+    available: !group.empty,
     overall: group.overall,
     personal: group.personal,
     organizational: group.organizational,
     categories: group.categories,
     subDimensions: group.subDimensions,
-    minSegmentSize: MIN_SEGMENT_SIZE,
   });
 }

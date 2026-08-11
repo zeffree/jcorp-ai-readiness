@@ -102,7 +102,7 @@ export function DashboardClient() {
   }, [data, rowMode]);
 
   const availableSegments = useMemo(
-    () => segments.filter((segment) => !segment.aggregate.suppressed),
+    () => segments.filter((segment) => !segment.aggregate.empty),
     [segments],
   );
 
@@ -139,7 +139,7 @@ export function DashboardClient() {
       segments.map((segment) => ({
         label: segment.label,
         n: segment.aggregate.n,
-        suppressed: segment.aggregate.suppressed,
+        empty: segment.aggregate.empty,
         values:
           columnMode === "category"
             ? segment.aggregate.categories
@@ -157,7 +157,7 @@ export function DashboardClient() {
       };
       for (const label of compare) {
         const segment = segments.find((entry) => entry.label === label);
-        if (segment && !segment.aggregate.suppressed) {
+        if (segment && !segment.aggregate.empty) {
           point[label] = segment.aggregate.categories[category.id] ?? 0;
         }
       }
@@ -169,7 +169,7 @@ export function DashboardClient() {
     const series = compare
       .filter((label) => {
         const segment = segments.find((entry) => entry.label === label);
-        return segment && !segment.aggregate.suppressed;
+        return segment && !segment.aggregate.empty;
       })
       .slice(0, 4)
       .map((label, index) => ({
@@ -192,9 +192,9 @@ export function DashboardClient() {
   const league = useMemo(
     () =>
       [...segments].sort((a, b) => {
-        if (a.aggregate.suppressed && b.aggregate.suppressed) return 0;
-        if (a.aggregate.suppressed) return 1;
-        if (b.aggregate.suppressed) return -1;
+        if (a.aggregate.empty && b.aggregate.empty) return 0;
+        if (a.aggregate.empty) return 1;
+        if (b.aggregate.empty) return -1;
         return b.aggregate.overall - a.aggregate.overall;
       }),
     [segments],
@@ -360,7 +360,7 @@ export function DashboardClient() {
             <ScoreDial
               score={data.group.overall}
               label="Overall readiness index"
-              caption={data.group.suppressed ? "Awaiting responses" : undefined}
+              caption={data.group.empty ? "Awaiting responses" : undefined}
             />
             <ScoreDial
               score={data.group.personal}
@@ -372,10 +372,9 @@ export function DashboardClient() {
             />
           </section>
 
-          {data.group.suppressed ? (
+          {data.group.empty ? (
             <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              Fewer than {data.minSegmentSize} responses match these filters, so
-              scores are hidden to protect respondent anonymity.
+              No responses match these filters yet.
             </p>
           ) : null}
 
@@ -386,8 +385,8 @@ export function DashboardClient() {
                   Benchmark heatmap
                 </h2>
                 <p className="mt-1 text-xs text-muted">
-                  Segments with fewer than {data.minSegmentSize} responses are
-                  hidden.
+                  Every segment with at least one response is shown. Read thin
+                  segments (low n) with care.
                 </p>
               </div>
               <div className="no-print flex flex-wrap items-center gap-4">
@@ -411,11 +410,7 @@ export function DashboardClient() {
             </div>
 
             <div className="mt-4">
-              <Heatmap
-                rows={heatmapRows}
-                columns={columns}
-                minSegmentSize={data.minSegmentSize}
-              />
+              <Heatmap rows={heatmapRows} columns={columns} />
             </div>
             <div className="mt-4">
               <HeatLegend />
@@ -434,7 +429,7 @@ export function DashboardClient() {
               </div>
               <div className="no-print mt-3 flex flex-wrap gap-1.5">
                 {segments.map((segment) => {
-                  const disabled = segment.aggregate.suppressed;
+                  const disabled = segment.aggregate.empty;
                   const active = compare.includes(segment.label);
                   return (
                     <button
@@ -449,11 +444,7 @@ export function DashboardClient() {
                             ? "border-brand-600 bg-brand-600 text-white"
                             : "border-slate-200 bg-white text-slate-600 hover:border-brand-300"
                       }`}
-                      title={
-                        disabled
-                          ? `Hidden: fewer than ${data.minSegmentSize} responses`
-                          : undefined
-                      }
+                      title={disabled ? "No responses yet" : undefined}
                     >
                       {segment.label}
                       <span className="ml-1.5 opacity-70">
@@ -504,7 +495,7 @@ export function DashboardClient() {
                       >
                         <td className="py-2 pr-2">
                           <span className="text-ink">{segment.label}</span>
-                          {!segment.aggregate.suppressed ? (
+                          {!segment.aggregate.empty ? (
                             <span className="ml-2 align-middle">
                               <ScoreBadge
                                 score={segment.aggregate.overall}
@@ -516,12 +507,12 @@ export function DashboardClient() {
                         <td className="py-2 px-2 text-right tabular-nums text-muted">
                           {segment.aggregate.n}
                         </td>
-                        {segment.aggregate.suppressed ? (
+                        {segment.aggregate.empty ? (
                           <td
                             colSpan={3}
                             className="py-2 pl-2 text-right text-xs text-slate-400"
                           >
-                            hidden (&lt; {data.minSegmentSize})
+                            no responses yet
                           </td>
                         ) : (
                           <>
@@ -650,11 +641,7 @@ export function DashboardClient() {
                           <td
                             key={role}
                             className={`border-t border-slate-100 px-1 py-1.5 text-center tabular-nums ${
-                              count === 0
-                                ? "text-slate-300"
-                                : count < data.minSegmentSize
-                                  ? "text-amber-600"
-                                  : "text-ink"
+                              count === 0 ? "text-slate-300" : "text-ink"
                             }`}
                           >
                             {count}

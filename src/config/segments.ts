@@ -34,12 +34,3 @@ export const FUNCTION_ROLES = [
 ] as const;
 
 export type FunctionRole = (typeof FUNCTION_ROLES)[number];
-
-/**
- * Minimum number of responses a segment must contain before its scores are
- * shown. Protects respondent anonymity in small cells such as a single
- * "Head of Company" within one operating company.
- */
-export const MIN_SEGMENT_SIZE = Number(
-  process.env.NEXT_PUBLIC_MIN_SEGMENT_SIZE ?? 3,
-);

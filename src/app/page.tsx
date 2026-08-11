@@ -76,9 +76,8 @@ export default function HomePage() {
           <p className="mt-2 text-sm leading-relaxed text-amber-900/80">
             No name, email address or IP address is recorded. The only things
             stored alongside your answers are your organisation and your
-            cross-functional role, and management only ever sees group averages.
-            Any group with fewer than three responses is hidden entirely so a
-            small team can never be traced back to one person.
+            cross-functional role, and management only ever sees group averages
+            rather than individual submissions.
           </p>
         </section>
 

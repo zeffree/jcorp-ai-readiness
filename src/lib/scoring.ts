@@ -134,7 +134,8 @@ export interface Aggregate {
   categories: Record<string, number>;
   subDimensions: Record<string, number>;
   band: string;
-  suppressed: boolean;
+  /** True only when the segment has no responses at all. */
+  empty: boolean;
 }
 
 export const EMPTY_AGGREGATE: Aggregate = {
@@ -145,24 +146,16 @@ export const EMPTY_AGGREGATE: Aggregate = {
   categories: {},
   subDimensions: {},
   band: "—",
-  suppressed: true,
+  empty: true,
 };
 
 /**
- * Average a set of scored responses. Segments smaller than `minSegmentSize`
- * are returned flagged as suppressed with their scores zeroed, so a small cell
- * can never be read back to an individual.
+ * Average a set of scored responses. Every segment with at least one response
+ * is scored; only a segment with no responses comes back flagged as empty.
  */
-export function aggregate(
-  responses: AggregateInput[],
-  minSegmentSize: number,
-): Aggregate {
+export function aggregate(responses: AggregateInput[]): Aggregate {
   const n = responses.length;
   if (n === 0) return { ...EMPTY_AGGREGATE, n: 0 };
-
-  if (n < minSegmentSize) {
-    return { ...EMPTY_AGGREGATE, n, suppressed: true };
-  }
 
   const categories: Record<string, number> = {};
   for (const category of ALL_CATEGORIES) {
@@ -190,7 +183,7 @@ export function aggregate(
     categories,
     subDimensions,
     band: bandFor(overall).label,
-    suppressed: false,
+    empty: false,
   };
 }
 
@@ -199,14 +192,10 @@ export function aggregateBy<K extends "organization" | "functionRole">(
   responses: AggregateInput[],
   key: K,
   values: readonly string[],
-  minSegmentSize: number,
 ): { label: string; aggregate: Aggregate }[] {
   return values.map((value) => ({
     label: value,
-    aggregate: aggregate(
-      responses.filter((r) => r[key] === value),
-      minSegmentSize,
-    ),
+    aggregate: aggregate(responses.filter((r) => r[key] === value)),
   }));
 }
 

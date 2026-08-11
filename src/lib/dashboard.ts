@@ -39,7 +39,6 @@ export interface Deviation {
 
 export interface DashboardPayload {
   generatedAt: string;
-  minSegmentSize: number;
   totals: {
     responses: number;
     straightLined: number;
@@ -84,7 +83,7 @@ function deviations(
 ): Deviation[] {
   const results: Deviation[] = [];
   for (const segment of segments) {
-    if (segment.aggregate.suppressed) continue;
+    if (segment.aggregate.empty) continue;
     for (const sub of ALL_SUB_DIMENSIONS) {
       const score = segment.aggregate.subDimensions[sub.id] ?? 0;
       const groupScore = group.subDimensions[sub.id] ?? 0;
@@ -131,23 +130,10 @@ function bestPerSegment(
     .slice(0, 6);
 }
 
-export function buildDashboard(
-  responses: AggregateInput[],
-  minSegmentSize: number,
-): DashboardPayload {
-  const group = aggregate(responses, minSegmentSize);
-  const byOrganization = aggregateBy(
-    responses,
-    "organization",
-    ORGANIZATIONS,
-    minSegmentSize,
-  );
-  const byFunction = aggregateBy(
-    responses,
-    "functionRole",
-    FUNCTION_ROLES,
-    minSegmentSize,
-  );
+export function buildDashboard(responses: AggregateInput[]): DashboardPayload {
+  const group = aggregate(responses);
+  const byOrganization = aggregateBy(responses, "organization", ORGANIZATIONS);
+  const byFunction = aggregateBy(responses, "functionRole", FUNCTION_ROLES);
 
   const coverage = ORGANIZATIONS.map((organization) => {
     const counts: Record<string, number> = {};
@@ -167,8 +153,8 @@ export function buildDashboard(
   const personalDist = distribution(responses, "personalScore");
   const organizationalDist = distribution(responses, "organizationalScore");
 
-  const ranked = group.suppressed ? [] : rankSubDimensions(group);
-  const allDeviations = group.suppressed
+  const ranked = group.empty ? [] : rankSubDimensions(group);
+  const allDeviations = group.empty
     ? []
     : [
         ...deviations(byOrganization, group, "Company"),
@@ -179,7 +165,6 @@ export function buildDashboard(
 
   return {
     generatedAt: new Date().toISOString(),
-    minSegmentSize,
     totals: {
       responses: responses.length,
       straightLined: responses.filter((r) => r.straightLined).length,
