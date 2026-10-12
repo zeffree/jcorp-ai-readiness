@@ -183,7 +183,36 @@ ai-readiness/
 
 ---
 
-## Live deployment
+## Live showcase (GitHub Pages, no running cost)
+
+The project is published as a database-free static demo at
+**https://zeffree.github.io/jcorp-ai-readiness/**, hosted from the `zeffree.github.io`
+portfolio repo. It costs nothing to run.
+
+- The questionnaire and scoring run entirely in the browser.
+- The management dashboard (`/admin/`, no password) reads `static-overrides/demo-data.json`,
+  an export of the 520 synthetic demo responses. A visitor's own submissions stay in their
+  browser (localStorage) and are added to that visitor's dashboard only.
+- The full-stack mode (PostgreSQL, password-gated dashboard, CSV export) is unchanged and is
+  still what `npm run dev` / `npm run build` produce.
+
+Refresh and republish the showcase:
+
+```sh
+npm run export:snapshot            # optional: re-export demo rows from the database
+PAGES_REPO=../zeffree.github.io npm run publish:showcase
+# then commit and push the portfolio repo; its workflow deploys the site
+```
+
+`npm run build:static` builds the export on its own into `.static-build/out`. It works from a
+staged copy that strips the API routes, admin login and Prisma, so the real tree is untouched.
+
+The Azure deployment described below was shut down to save cost. The last commit that targeted
+it is tagged `azure-live`; `docs/SELF-HOSTING.md` explains how to stand it up again.
+
+---
+
+## Azure deployment (retired, kept for reference)
 
 The app runs on Azure in the `rg-jcorp-ai-readiness` resource group, Southeast Asia region,
 under the Visual Studio Enterprise subscription.

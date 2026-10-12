@@ -6,6 +6,9 @@ import { CategoryRadar, DistributionChart, ScoreBars } from "@/components/Charts
 import { HeatLegend, Heatmap } from "@/components/Heatmap";
 import { ScoreBadge, ScoreDial } from "@/components/Score";
 import type { DashboardPayload, SegmentAggregate } from "@/lib/dashboard";
+import { buildDashboard } from "@/lib/dashboard";
+import { STATIC_DEMO } from "@/lib/static-mode";
+import { filterRows, loadAllRows } from "@/lib/static-store";
 
 type RowMode = "organization" | "function";
 type ColumnMode = "category" | "subDimension";
@@ -72,6 +75,13 @@ export function DashboardClient() {
     let active = true;
     void (async () => {
       try {
+        if (STATIC_DEMO) {
+          const rows = filterRows(await loadAllRows(), filters);
+          const payload = buildDashboard(rows);
+          payload.totals.demo = rows.filter((row) => row.isDemo).length;
+          if (active) setResult({ key, data: payload, error: null });
+          return;
+        }
         const response = await fetch(`/api/admin/stats?${query}`, {
           cache: "no-store",
         });
@@ -94,7 +104,7 @@ export function DashboardClient() {
     return () => {
       active = false;
     };
-  }, [key, query]);
+  }, [key, query, filters]);
 
   const segments: SegmentAggregate[] = useMemo(() => {
     if (!data) return [];
@@ -232,12 +242,14 @@ export function DashboardClient() {
           >
             Refresh
           </button>
-          <a
-            href={`/api/admin/export?${query}`}
-            className="rounded-md bg-brand-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-800"
-          >
-            Export CSV
-          </a>
+          {STATIC_DEMO ? null : (
+            <a
+              href={`/api/admin/export?${query}`}
+              className="rounded-md bg-brand-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-800"
+            >
+              Export CSV
+            </a>
+          )}
         </div>
       </div>
 

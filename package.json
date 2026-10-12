@@ -15,6 +15,9 @@
     "db:studio": "prisma studio",
     "seed": "tsx scripts/seed.ts",
     "seed:purge": "tsx scripts/seed.ts --purge",
+    "export:snapshot": "tsx scripts/export-snapshot.ts",
+    "build:static": "node scripts/build-static.mjs",
+    "publish:showcase": "node scripts/publish-showcase.mjs",
     "purge:test": "tsx scripts/purge-test.ts",
     "postinstall": "prisma generate"
   },

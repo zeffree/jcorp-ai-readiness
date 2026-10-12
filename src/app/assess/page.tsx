@@ -10,6 +10,8 @@ import {
 } from "@/config/framework";
 import { FUNCTION_ROLES, ORGANIZATIONS } from "@/config/segments";
 import { AppHeader } from "@/components/AppHeader";
+import { STATIC_DEMO } from "@/lib/static-mode";
+import { submitLocalResponse } from "@/lib/static-store";
 
 const STORAGE_KEY = "jcorp-ai-readiness-draft-v1";
 
@@ -128,6 +130,16 @@ export default function AssessPage() {
     setSubmitting(true);
     setError(null);
     try {
+      if (STATIC_DEMO) {
+        const id = submitLocalResponse(
+          draft.organization,
+          draft.functionRole,
+          draft.answers,
+        );
+        window.localStorage.removeItem(STORAGE_KEY);
+        router.push(`/results?id=${id}`);
+        return;
+      }
       const response = await fetch("/api/responses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

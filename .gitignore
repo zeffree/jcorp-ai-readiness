@@ -56,3 +56,5 @@ next-env.d.ts
 
 # deployment artifact
 /dist
+
+/.static-build/
